@@ -1,6 +1,6 @@
 # SPEC 01 — MVP visual de las pantallas de Arcade Vault
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** —
 > **Fecha:** 2026-09-28
 > **Objetivo:** Portar a Next.js App Router, solo como interfaz visual y sin lógica de juego real, las pantallas Biblioteca, Detalle de juego, Reproductor y Salón de la Fama definidas en `references/resources/resources/templates/`.
@@ -90,22 +90,22 @@ Convenciones:
 
 ## Criterios de aceptación
 
-- [ ] `npm run dev` sirve `/`, `/juegos/[id]`, `/juegos/[id]/jugar` y `/salon-de-la-fama` sin errores en consola del navegador.
-- [ ] `npm run build` y `npm run lint` pasan sin errores.
-- [ ] La Biblioteca muestra las 8 tarjetas de `GAMES`, filtra por texto y por categoría, y muestra el estado "NO HAY RESULTADOS" cuando no hay coincidencias.
-- [ ] Hacer clic en una tarjeta (o en su botón "JUGAR") navega a `/juegos/<id>` con los datos del juego correcto.
-- [ ] El Detalle muestra un leaderboard de 10 filas generado con `seededScores` y el botón "JUGAR AHORA" navega al Reproductor.
-- [ ] Un `id` de juego inexistente en `/juegos/[id]` devuelve 404.
-- [ ] En el Reproductor, la puntuación aumenta automáticamente cada ~220ms mientras no está en pausa ni terminado.
-- [ ] El botón "PAUSA"/"REANUDAR" detiene y reanuda el incremento de puntuación.
-- [ ] El botón "FIN" abre el modal de fin de partida con la puntuación final.
-- [ ] Escribir un nombre y pulsar "GUARDAR PUNTUACIÓN" agrega una entrada a `localStorage["av_scores"]` y muestra el toast "PUNTUACIÓN GUARDADA_".
-- [ ] "JUGAR DE NUEVO" reinicia puntuación, vidas, nivel y cierra el modal; "VOLVER AL VAULT" navega a `/`.
-- [ ] El Salón de la Fama muestra un podio (2º, 1º, 3º) y una tabla de 12 filas que cambian al seleccionar otro tab de juego.
-- [ ] El Salón de la Fama nunca muestra la fila "tu mejor marca" (no hay sesión en este MVP).
-- [ ] El Nav aparece en las cuatro rutas, resalta el link activo, y su botón "Iniciar Sesión" no navega ni cambia de estado al hacer clic.
-- [ ] El menú mobile del Nav abre con el botón hamburguesa y cierra al tocar el backdrop o un link.
-- [ ] El fondo animado (`av-bg`) y las tipografías Press Start 2P/JetBrains Mono son visibles en las cuatro rutas.
+- [x] `npm run dev` sirve `/`, `/juegos/[id]`, `/juegos/[id]/jugar` y `/salon-de-la-fama` sin errores en consola del navegador.
+- [x] `npm run build` y `npm run lint` pasan sin errores.
+- [x] La Biblioteca muestra las 8 tarjetas de `GAMES`, filtra por texto y por categoría, y muestra el estado "NO HAY RESULTADOS" cuando no hay coincidencias.
+- [x] Hacer clic en una tarjeta (o en su botón "JUGAR") navega a `/juegos/<id>` con los datos del juego correcto.
+- [x] El Detalle muestra un leaderboard de 10 filas generado con `seededScores` y el botón "JUGAR AHORA" navega al Reproductor.
+- [x] Un `id` de juego inexistente en `/juegos/[id]` devuelve 404.
+- [x] En el Reproductor, la puntuación aumenta automáticamente cada ~220ms mientras no está en pausa ni terminado.
+- [x] El botón "PAUSA"/"REANUDAR" detiene y reanuda el incremento de puntuación.
+- [x] El botón "FIN" abre el modal de fin de partida con la puntuación final.
+- [x] Escribir un nombre y pulsar "GUARDAR PUNTUACIÓN" agrega una entrada a `localStorage["av_scores"]` y muestra el toast "PUNTUACIÓN GUARDADA_".
+- [x] "JUGAR DE NUEVO" reinicia puntuación, vidas, nivel y cierra el modal; "VOLVER AL VAULT" navega a `/`.
+- [x] El Salón de la Fama muestra un podio (2º, 1º, 3º) y una tabla de 12 filas que cambian al seleccionar otro tab de juego.
+- [x] El Salón de la Fama nunca muestra la fila "tu mejor marca" (no hay sesión en este MVP).
+- [x] El Nav aparece en las cuatro rutas, resalta el link activo, y su botón "Iniciar Sesión" no navega ni cambia de estado al hacer clic.
+- [x] El menú mobile del Nav abre con el botón hamburguesa y cierra al tocar el backdrop o un link.
+- [x] El fondo animado (`av-bg`) y las tipografías Press Start 2P/JetBrains Mono son visibles en las cuatro rutas.
 
 ---
 
