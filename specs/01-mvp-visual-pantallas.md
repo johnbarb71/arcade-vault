@@ -1,6 +1,6 @@
 # SPEC 01 — MVP visual de las pantallas de Arcade Vault
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** —
 > **Fecha:** 2026-09-28
 > **Objetivo:** Portar a Next.js App Router, solo como interfaz visual y sin lógica de juego real, las pantallas Biblioteca, Detalle de juego, Reproductor y Salón de la Fama definidas en `references/resources/resources/templates/`.
