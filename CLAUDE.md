@@ -14,6 +14,10 @@ The project intends to follow Spec Driven Design via the `/spec` and `/spec-impl
 ## Skills
 Usa siempre /frontend-design para diseñar interfaces de usuario en HTML.
 
+## Testing / screenshots
+
+All images produced while testing or verifying the app (Playwright MCP screenshots, diffs, reference comparisons, etc.) go in `/.playwright-screenshots` at the repo root — pass `filename: "playwright-screenshots/<name>.png"` to the Playwright MCP screenshot tool. That folder is gitignored; it's scratch verification output, not part of the app.
+
 ## Architecture notes
 
 - App Router only, all routes live under `app/`. There is no `pages/` directory.

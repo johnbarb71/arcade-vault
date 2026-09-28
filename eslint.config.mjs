@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Raw reference templates (not app code, not meant to satisfy project lint rules).
+    "references/**",
   ]),
 ]);
 
