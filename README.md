@@ -14,4 +14,11 @@ https://github.com/Klerith/fernando-skills
 ```bash
 npx skills@latest add Klerith/fernando-skills
 ```
-## hola mundo
+## Commands
+
+- `npm run dev` — start the dev server (this is also what regenerates AGENTS.md, see above)
+- `npm run build` — production build
+- `npm run start` — run the production build
+- `npm run lint` — lint with ESLint (flat config in `eslint.config.mjs`, extends `eslint-config-next`'s core-web-vitals and typescript configs)
+
+There is no test runner configured in this project yet.
