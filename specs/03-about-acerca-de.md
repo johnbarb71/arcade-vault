@@ -1,6 +1,6 @@
 # SPEC 03 — Acerca de (About + Contacto) de Arcade Vault
 
-> **Estado:** Aprobado
+> **Estado:** Implmentado
 > **Depende de:** SPEC 01, SPEC 02
 > **Fecha:** 2026-09-29
 > **Objetivo:** Portar a Next.js App Router la pantalla Acerca de (misión, highlights y formulario de contacto simulado) definida en `references/resources/resources/templates/home-about/home-about/about.jsx`, en la ruta `/acerca-de`, y añadir el 4º link "Acerca de" al Nav.
@@ -70,19 +70,19 @@ Convenciones:
 
 ## Criterios de aceptación
 
-- [ ] `npm run dev` sirve `/acerca-de` con hero, divisor y sección de contacto, sin errores de consola.
-- [ ] El Nav muestra 4 links (Inicio, Biblioteca, Salón de la Fama, Acerca de) en desktop y en el menú mobile.
-- [ ] En `/acerca-de` solo el link "Acerca de" está resaltado; en `/`, `/biblioteca`, `/juegos/[id]` y `/salon-de-la-fama` no lo está.
-- [ ] Los 3 highlights muestran los iconos HEART, BROWSER y PLANT con los colores magenta, cyan y green.
-- [ ] Enviar el formulario con cualquier campo vacío (o solo espacios) activa el `shake` durante ~400 ms y mantiene el formulario visible.
-- [ ] Un email sin formato válido es rechazado por el navegador antes de llegar a la lógica de envío.
-- [ ] Enviar con los 3 campos válidos muestra la pantalla `terminal-success` con "GRACIAS, {NOMBRE EN MAYÚSCULAS}."
-- [ ] "ENVIAR OTRO MENSAJE" vuelve al formulario con nombre, correo y mensaje vacíos.
-- [ ] Enviar el formulario no realiza ninguna petición de red ni escribe en `localStorage`.
-- [ ] Las secciones con `reveal` (divisor y contacto) se activan al hacer scroll.
-- [ ] En ≤900 px el `contact-grid` pasa a una columna.
-- [ ] `/`, `/biblioteca`, `/juegos/[id]`, `/juegos/[id]/jugar` y `/salon-de-la-fama` se ven igual que antes de este spec (salvo el nuevo link del Nav).
-- [ ] `npm run build` y `npm run lint` pasan sin errores.
+- [x] `npm run dev` sirve `/acerca-de` con hero, divisor y sección de contacto, sin errores de consola.
+- [x] El Nav muestra 4 links (Inicio, Biblioteca, Salón de la Fama, Acerca de) en desktop y en el menú mobile.
+- [x] En `/acerca-de` solo el link "Acerca de" está resaltado; en `/`, `/biblioteca`, `/juegos/[id]` y `/salon-de-la-fama` no lo está.
+- [x] Los 3 highlights muestran los iconos HEART, BROWSER y PLANT con los colores magenta, cyan y green.
+- [x] Enviar el formulario con cualquier campo vacío (o solo espacios) activa el `shake` durante ~400 ms y mantiene el formulario visible.
+- [x] Un email sin formato válido es rechazado por el navegador antes de llegar a la lógica de envío.
+- [x] Enviar con los 3 campos válidos muestra la pantalla `terminal-success` con "GRACIAS, {NOMBRE EN MAYÚSCULAS}."
+- [x] "ENVIAR OTRO MENSAJE" vuelve al formulario con nombre, correo y mensaje vacíos.
+- [x] Enviar el formulario no realiza ninguna petición de red ni escribe en `localStorage`.
+- [x] Las secciones con `reveal` (divisor y contacto) se activan al hacer scroll.
+- [x] En ≤900 px el `contact-grid` pasa a una columna.
+- [x] `/`, `/biblioteca`, `/juegos/[id]`, `/juegos/[id]/jugar` y `/salon-de-la-fama` se ven igual que antes de este spec (salvo el nuevo link del Nav).
+- [x] `npm run build` y `npm run lint` pasan sin errores.
 
 ---
 
