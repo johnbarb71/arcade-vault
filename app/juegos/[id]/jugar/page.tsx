@@ -1,15 +1,20 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
 import { GAMES } from "@/lib/data";
+import { createAsteroidsGame, type AsteroidsGameHandle } from "@/lib/games/asteroids";
 
 export default function GamePlayerPage({ params }: PageProps<"/juegos/[id]/jugar">) {
   const { id } = use(params);
   const router = useRouter();
   const game = GAMES.find((g) => g.id === id);
   if (!game) notFound();
+  const isRocas = game.id === "rocas";
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const handleRef = useRef<AsteroidsGameHandle | null>(null);
 
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
@@ -20,7 +25,7 @@ export default function GamePlayerPage({ params }: PageProps<"/juegos/[id]/jugar
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (over || paused) return;
+    if (isRocas || over || paused) return;
     const t = setInterval(() => {
       setScore((s) => {
         const next = s + Math.floor(10 + Math.random() * 90);
@@ -29,9 +34,43 @@ export default function GamePlayerPage({ params }: PageProps<"/juegos/[id]/jugar
       });
     }, 220);
     return () => clearInterval(t);
-  }, [over, paused]);
+  }, [isRocas, over, paused]);
 
-  const endGame = () => setOver(true);
+  useEffect(() => {
+    if (!isRocas) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handle = createAsteroidsGame(canvas, (state) => {
+      setScore(state.score);
+      setLives(state.lives);
+      setLevel(state.level);
+      if (state.phase === "gameover") setOver(true);
+    });
+    handleRef.current = handle;
+
+    return () => {
+      handle.destroy();
+      handleRef.current = null;
+    };
+  }, [isRocas]);
+
+  const togglePause = () => {
+    setPaused((p) => {
+      const next = !p;
+      if (isRocas) handleRef.current?.setPaused(next);
+      return next;
+    });
+  };
+
+  const endGame = () => {
+    if (isRocas) {
+      handleRef.current?.forceGameOver();
+    } else {
+      setOver(true);
+    }
+  };
+
   const restart = () => {
     setScore(0);
     setLives(3);
@@ -39,6 +78,7 @@ export default function GamePlayerPage({ params }: PageProps<"/juegos/[id]/jugar
     setPaused(false);
     setOver(false);
     setSaved(false);
+    if (isRocas) handleRef.current?.restart();
   };
 
   const saveScore = () => {
@@ -76,7 +116,7 @@ export default function GamePlayerPage({ params }: PageProps<"/juegos/[id]/jugar
           </div>
         </div>
         <div className="hud-actions">
-          <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
+          <button className="btn yellow" onClick={togglePause}>
             {paused ? "REANUDAR" : "PAUSA"}
           </button>
           <button className="btn magenta" onClick={endGame}>
@@ -90,13 +130,22 @@ export default function GamePlayerPage({ params }: PageProps<"/juegos/[id]/jugar
 
       <div className="crt">
         <div className="crt-screen">
-          <div className="game-arena">
-            <div className="grid-floor"></div>
-            <div className="enemy e1"></div>
-            <div className="enemy e2"></div>
-            <div className="enemy e3"></div>
-            <div className="player-ship"></div>
-          </div>
+          {isRocas ? (
+            <canvas
+              ref={canvasRef}
+              width={800}
+              height={600}
+              style={{ position: "absolute", inset: 0, display: "block", width: "100%", height: "100%" }}
+            />
+          ) : (
+            <div className="game-arena">
+              <div className="grid-floor"></div>
+              <div className="enemy e1"></div>
+              <div className="enemy e2"></div>
+              <div className="enemy e3"></div>
+              <div className="player-ship"></div>
+            </div>
+          )}
           {paused && (
             <div className="crt-content" style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}>
               <div>
