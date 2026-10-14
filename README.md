@@ -67,7 +67,8 @@ Migración: `supabase/migrations/20261006000000_games_and_scores.sql`.
 
 - **`games`** — catálogo de los 8 juegos (`id`, `title`, `short`, `long`, `cat`, `cover`, `color`, `best`, `plays`), sembrado 1:1 desde `GAMES` en `lib/data.ts`. Ninguna pantalla la lee todavía: Biblioteca, Detalle y Salón de la Fama siguen usando `lib/data.ts` para portada/categoría/descripción. Existe para que un spec futuro migre el catálogo sin tener que crear la tabla primero.
 - **`scores`** — leaderboard real (`id` identity, `game_id` → FK a `games`, `name`, `score`, `created_at`), con índice `(game_id, score desc)`. Sembrada con 96 filas (12 por juego), generadas una sola vez con la misma lógica de `seededScores(gameId.length * 23 + 7, 12)` que antes usaba el Salón de la Fama — unifica lo que eran dos semillas distintas (Detalle y Salón) en una sola fuente. Desde entonces, cada partida guardada en el Reproductor (los 8 juegos, no solo Rocas) agrega una fila real vía `saveScore()`.
-- **RLS**: habilitada en ambas tablas. Desde SPEC 07 (`supabase/migrations/20261014000000_scores_auth_only.sql`), `SELECT` e `INSERT` exigen rol `authenticated` en `games` y `scores`, y se revocó el `GRANT` de tabla a `anon` (sin eso, PostgREST devolvía `200 []` para `anon` en vez de fallar: RLS sola filtra filas pero no basta para que la consulta falle con "permission denied"). No hay `UPDATE` ni `DELETE` para nadie en ninguna tabla.
+- **RLS**: habilitada en ambas tablas. Desde SPEC 07 (`supabase/migrations/20261014000000_scores_auth_only.sql`), `SELECT` e `INSERT` exigen rol `authenticated` en `games` y `scores`, y se revocó el `GRANT` de tabla a `anon` (sin eso, PostgREST devolvía `200 []` para `anon` en vez de fallar: RLS sola filtra filas pero no basta para que la consulta falle con "permission denied"). Desde SPEC 08 (`supabase/migrations/20261014010000_scores_security_hardening.sql`), la policy de `INSERT` en `scores` es `scores_insert_own` (`with check (auth.uid() = user_id)`), en vez del `scores_insert_authenticated` de SPEC 07 que aceptaba `WITH CHECK (true)`. No hay `UPDATE` ni `DELETE` para nadie en ninguna tabla.
+- **`scores.user_id`** (SPEC 08) — columna `uuid` nullable, FK a `auth.users(id)`, con `default auth.uid()`: toda fila nueva insertada vía `saveScore()` recibe el id del usuario autenticado automáticamente, sin que el cliente lo envíe (no se puede falsificar). Las 96 filas semilla de SPEC 06 quedan con `user_id = null` permanentemente — no hay cuenta real a la que atribuirlas — y siguen siendo legibles y apareciendo en Detalle/Salón de la Fama sin cambios visuales. Ninguna pantalla lee o muestra `user_id` todavía.
 - **Helpers** (`lib/supabase/scores.ts`): `getLeaderboard(supabase, gameId, limit)`, `getBestScore(supabase, gameId)`, `saveScore(supabase, gameId, name, score)`. Reciben el cliente de Supabase como parámetro (server o browser) en vez de crearlo ellos mismos. `saveScore` nunca lanza: devuelve `{ ok: false, error }` para que la UI muestre el error en vez de fallar en silencio.
 
 ## Auth (SPEC 07)
@@ -92,4 +93,33 @@ En el dashboard del proyecto ([Authentication → Providers](https://supabase.co
 
 - Las credenciales de OAuth (Google y GitHub) se dan de alta y se configuran manualmente en el dashboard de Supabase (Authentication → Providers → cada provider → Client ID/Secret). No se gestionan desde este repo ni desde las migraciones.
 - El SMTP de prueba que trae Supabase por defecto para los correos de confirmación tiene un límite de envíos muy bajo (pocos correos por hora) — suficiente para probar manualmente con pocas cuentas, no para volumen. Migrar a un SMTP propio (Resend, SendGrid…) queda para un spec futuro.
-- "Olvidé mi contraseña", una tabla `profiles` con username único, y vincular `scores` a `auth.users` tampoco están en este spec — ver `specs/07-autenticacion-rutas-protegidas.md`.
+- "Olvidé mi contraseña" y una tabla `profiles` con username único tampoco están en este spec — ver `specs/07-autenticacion-rutas-protegidas.md`. (Vincular `scores` a `auth.users` sí se hizo, en SPEC 08 — ver más abajo.)
+
+## Seguridad (SPEC 08)
+
+Cierra los puntos de `references/Security/Checklist.md` (gitignored, local) y los warnings reales confirmados en el panel de advisors de Supabase.
+
+### Headers de seguridad
+
+`next.config.ts` aplica 3 headers a todas las rutas (`/(.*)`) vía `headers()`:
+
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+
+No incluye `Strict-Transport-Security`, `Permissions-Policy` ni `Content-Security-Policy` — quedan para un spec futuro, para no romper algo (Google Fonts, redirects de OAuth) sin mapear cada fuente externa primero.
+
+### Hardening de RLS
+
+Migración `supabase/migrations/20261014010000_scores_security_hardening.sql`:
+
+- `scores.user_id` (ver sección de tablas de dominio arriba) y la policy `scores_insert_own`.
+- `revoke execute on function public.rls_auto_enable() from anon, authenticated, public;` — función `SECURITY DEFINER` que agrega la plataforma Supabase (event trigger que auto-activa RLS en tablas nuevas), no nuestras migraciones. El advisor la marcaba como ejecutable por `anon`/`authenticated`; el revoke no cambia su lógica ni requiere argumentos, solo cierra el warning.
+
+### Configuración manual de Supabase Auth
+
+Igual que las credenciales OAuth de SPEC 07, estos pasos se configuran a mano en el dashboard — no hay herramienta MCP para fijarlos por código:
+
+- **Longitud mínima de contraseña**: 8 caracteres (Authentication → Policies → Password). El dashboard activó junto con esto un requisito de complejidad (mayúscula + minúscula + dígito + símbolo) que el checklist no pedía explícitamente, pero que es más estricto, no menos — se deja así.
+- **Leaked password protection**: **no activada** — requiere el plan Pro de Supabase, que este proyecto no tiene. `get_advisors(type: "security")` sigue reportando `auth_leaked_password_protection`. Limitación aceptada; queda pendiente para cuando el proyecto tenga un plan que la soporte.
+- **Rate limit de sign-ups por IP** (Authentication → Rate Limits): confirmado en 30 por hora (valor por defecto de Supabase).
