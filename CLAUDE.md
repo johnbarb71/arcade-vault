@@ -52,6 +52,10 @@ Work is driven by numbered specs in `specs/NN-slug.md`, using the `/spec` (desig
 
 Usa siempre /frontend-design para diseñar interfaces de usuario en HTML.
 
+## Agentes
+
+`.claude/agents/security-auditor.md` audita RLS, advisors de Supabase, funciones `SECURITY DEFINER`, headers de `next.config.ts` y las rutas públicas de `proxy.ts` contra lo documentado en SPEC 07/08 y `references/Security/Checklist.md`. Invócalo (tool `Agent`, `subagent_type: "security-auditor"`) para pedir una auditoría de seguridad, o proactivamente después de tocar migraciones, políticas RLS, `proxy.ts` o `next.config.ts`. Solo reporta hallazgos — no aplica mitigaciones.
+
 ## Testing / screenshots
 
 All images produced while testing or verifying the app (Playwright MCP screenshots, diffs, reference comparisons, etc.) go in `/.playwright-screenshots` at the repo root — pass `filename: ".playwright-screenshots/<name>.png"` to the Playwright MCP screenshot tool. That folder is gitignored; it's scratch verification output, not part of the app.
