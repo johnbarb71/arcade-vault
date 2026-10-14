@@ -2,7 +2,7 @@
 
 Es una plataforma para jugar online y competir por la mayor cantidad de puntos.
 
-Estado actual: el catálogo (Biblioteca, Detalle, Salón de la Fama) sigue mostrando título, portada, categoría y descripción desde datos mock (`lib/data.ts`). De los 8 juegos, **Rocas** (clon de Asteroids, `lib/games/asteroids.ts`) es jugable de verdad; el resto simula un puntaje con un timer en el Reproductor. En ambos casos la puntuación final se guarda de verdad en Supabase (tabla `scores`), y el leaderboard de Detalle y el Salón de la Fama leen esas mismas filas reales. Login y formulario de contacto siguen inertes.
+Estado actual: el catálogo (Biblioteca, Detalle, Salón de la Fama) sigue mostrando título, portada, categoría y descripción desde datos mock (`lib/data.ts`). De los 8 juegos, **Rocas** (clon de Asteroids, `lib/games/asteroids.ts`) es jugable de verdad; el resto simula un puntaje con un timer en el Reproductor. En ambos casos la puntuación final se guarda de verdad en Supabase (tabla `scores`), y el leaderboard de Detalle y el Salón de la Fama leen esas mismas filas reales. Jugar y ver el catálogo/leaderboard requieren cuenta (SPEC 07): `/auth` tiene registro e inicio de sesión reales contra Supabase Auth, y `proxy.ts` protege toda la app salvo Inicio y Acerca de. El formulario de contacto sigue inerte.
 
 ## Usa Spec Driven Design
 
@@ -67,5 +67,29 @@ Migración: `supabase/migrations/20261006000000_games_and_scores.sql`.
 
 - **`games`** — catálogo de los 8 juegos (`id`, `title`, `short`, `long`, `cat`, `cover`, `color`, `best`, `plays`), sembrado 1:1 desde `GAMES` en `lib/data.ts`. Ninguna pantalla la lee todavía: Biblioteca, Detalle y Salón de la Fama siguen usando `lib/data.ts` para portada/categoría/descripción. Existe para que un spec futuro migre el catálogo sin tener que crear la tabla primero.
 - **`scores`** — leaderboard real (`id` identity, `game_id` → FK a `games`, `name`, `score`, `created_at`), con índice `(game_id, score desc)`. Sembrada con 96 filas (12 por juego), generadas una sola vez con la misma lógica de `seededScores(gameId.length * 23 + 7, 12)` que antes usaba el Salón de la Fama — unifica lo que eran dos semillas distintas (Detalle y Salón) en una sola fuente. Desde entonces, cada partida guardada en el Reproductor (los 8 juegos, no solo Rocas) agrega una fila real vía `saveScore()`.
-- **RLS**: habilitada en ambas tablas. `SELECT` abierto a `anon`/`authenticated` en `games` y `scores`; `INSERT` abierto a `anon`/`authenticated` solo en `scores`, sin validación de servidor (mismo nivel de confianza que tenía el `localStorage` que reemplaza). No hay `UPDATE` ni `DELETE` para nadie en ninguna tabla.
+- **RLS**: habilitada en ambas tablas. Desde SPEC 07 (`supabase/migrations/20261014000000_scores_auth_only.sql`), `SELECT` e `INSERT` exigen rol `authenticated` en `games` y `scores`, y se revocó el `GRANT` de tabla a `anon` (sin eso, PostgREST devolvía `200 []` para `anon` en vez de fallar: RLS sola filtra filas pero no basta para que la consulta falle con "permission denied"). No hay `UPDATE` ni `DELETE` para nadie en ninguna tabla.
 - **Helpers** (`lib/supabase/scores.ts`): `getLeaderboard(supabase, gameId, limit)`, `getBestScore(supabase, gameId)`, `saveScore(supabase, gameId, name, score)`. Reciben el cliente de Supabase como parámetro (server o browser) en vez de crearlo ellos mismos. `saveScore` nunca lanza: devuelve `{ ok: false, error }` para que la UI muestre el error en vez de fallar en silencio.
+
+## Auth (SPEC 07)
+
+Registro e inicio de sesión reales con Supabase Auth (email/contraseña y OAuth), y `proxy.ts` protegiendo la app.
+
+### Rutas públicas vs. protegidas
+
+- **Públicas** (no requieren sesión): `/`, `/acerca-de`, `/auth`, `/auth/callback`, `/api/health/*`, y los assets internos de Next (`_next/static`, `_next/image`, `favicon.ico`).
+- **Protegidas** (redirigen a `/auth` sin sesión): todo lo demás — `/biblioteca`, `/juegos/[id]`, `/juegos/[id]/jugar`, `/salon-de-la-fama`.
+
+`proxy.ts` (raíz del proyecto) refresca la sesión en cada request con el patrón de cookies de `@supabase/ssr` y aplica esta regla.
+
+### Cómo se activa Auth en el proyecto de Supabase
+
+En el dashboard del proyecto ([Authentication → Providers](https://supabase.com/dashboard/project/_/auth/providers)):
+
+- **Confirm email** está activado — una cuenta nueva no puede iniciar sesión hasta confirmar el correo.
+- **Google** y **GitHub** están habilitados como providers de OAuth.
+
+### Pasos manuales pendientes
+
+- Las credenciales de OAuth (Google y GitHub) se dan de alta y se configuran manualmente en el dashboard de Supabase (Authentication → Providers → cada provider → Client ID/Secret). No se gestionan desde este repo ni desde las migraciones.
+- El SMTP de prueba que trae Supabase por defecto para los correos de confirmación tiene un límite de envíos muy bajo (pocos correos por hora) — suficiente para probar manualmente con pocas cuentas, no para volumen. Migrar a un SMTP propio (Resend, SendGrid…) queda para un spec futuro.
+- "Olvidé mi contraseña", una tabla `profiles` con username único, y vincular `scores` a `auth.users` tampoco están en este spec — ver `specs/07-autenticacion-rutas-protegidas.md`.
