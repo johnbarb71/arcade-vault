@@ -1,10 +1,12 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
 import { GAMES } from "@/lib/data";
 import { createAsteroidsGame, type AsteroidsGameHandle } from "@/lib/games/asteroids";
+import { createClient } from "@/lib/supabase/client";
+import { saveScore } from "@/lib/supabase/scores";
 
 export default function GamePlayerPage({ params }: PageProps<"/juegos/[id]/jugar">) {
   const { id } = use(params);
@@ -15,6 +17,7 @@ export default function GamePlayerPage({ params }: PageProps<"/juegos/[id]/jugar
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const handleRef = useRef<AsteroidsGameHandle | null>(null);
+  const supabase = useMemo(() => createClient(), []);
 
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
@@ -23,6 +26,7 @@ export default function GamePlayerPage({ params }: PageProps<"/juegos/[id]/jugar
   const [over, setOver] = useState(false);
   const [name, setName] = useState("INVITADO");
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isRocas || over || paused) return;
@@ -78,18 +82,18 @@ export default function GamePlayerPage({ params }: PageProps<"/juegos/[id]/jugar
     setPaused(false);
     setOver(false);
     setSaved(false);
+    setSaveError(null);
     if (isRocas) handleRef.current?.restart();
   };
 
-  const saveScore = () => {
-    try {
-      const all = JSON.parse(localStorage.getItem("av_scores") || "[]");
-      all.push({ game: game.id, score, name, at: Date.now() });
-      localStorage.setItem("av_scores", JSON.stringify(all));
-    } catch {
-      // localStorage no disponible (modo privado estricto): el flujo visual continúa igual.
+  const handleSaveScore = async () => {
+    const result = await saveScore(supabase, game.id, name, score);
+    if (result.ok) {
+      setSaveError(null);
+      setSaved(true);
+    } else {
+      setSaveError("ERROR AL GUARDAR, INTENTA DE NUEVO");
     }
-    setSaved(true);
   };
 
   return (
@@ -178,16 +182,19 @@ export default function GamePlayerPage({ params }: PageProps<"/juegos/[id]/jugar
             <div className="final-label">PUNTUACIÓN FINAL</div>
             <div className="final">{score.toLocaleString("es-ES")}</div>
             {!saved ? (
-              <div className="input-row">
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value.toUpperCase().slice(0, 10))}
-                  placeholder="TUS INICIALES"
-                />
-                <button className="btn yellow" onClick={saveScore}>
-                  GUARDAR PUNTUACIÓN
-                </button>
-              </div>
+              <>
+                <div className="input-row">
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value.toUpperCase().slice(0, 10))}
+                    placeholder="TUS INICIALES"
+                  />
+                  <button className="btn yellow" onClick={handleSaveScore}>
+                    GUARDAR PUNTUACIÓN
+                  </button>
+                </div>
+                {saveError && <div className="toast-error">▸ {saveError}_</div>}
+              </>
             ) : (
               <div className="toast-saved">▸ PUNTUACIÓN GUARDADA_</div>
             )}

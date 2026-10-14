@@ -782,6 +782,14 @@ a { color: inherit; text-decoration: none; }
 }
 @keyframes typewriter { to { width: 22ch; } }
 @keyframes caret { 50% { border-color: transparent; } }
+.toast-error {
+  font-family: var(--pixel);
+  font-size: 11px;
+  color: var(--magenta);
+  text-shadow: 0 0 8px var(--magenta);
+  margin-top: 14px;
+  display: block;
+}
 
 /* ===== auth ===== */
 .av-auth-wrap {
