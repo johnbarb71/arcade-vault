@@ -1,12 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Nav() {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const supabase = useMemo(() => createClient(), []);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
+
+  const displayName =
+    (user?.user_metadata?.username as string | undefined) ||
+    user?.email ||
+    "";
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/");
+  };
 
   const isInicio = pathname === "/";
   const isBiblioteca = pathname.startsWith("/biblioteca") || pathname.startsWith("/juegos");
@@ -43,7 +70,15 @@ export default function Nav() {
           <span className="coin"></span>
           <span>CRÉDITOS · 03</span>
         </div>
-        <button className="btn auth-btn">Iniciar Sesión</button>
+        {user ? (
+          <button className="btn ghost auth-btn" onClick={handleSignOut}>
+            {displayName} ▾
+          </button>
+        ) : (
+          <Link href="/auth" className="btn auth-btn">
+            Iniciar Sesión
+          </Link>
+        )}
         <button
           className="btn ghost hamburger"
           onClick={() => setOpen(true)}

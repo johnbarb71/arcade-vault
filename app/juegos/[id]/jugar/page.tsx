@@ -24,9 +24,16 @@ export default function GamePlayerPage({ params }: PageProps<"/juegos/[id]/jugar
   const [level, setLevel] = useState(1);
   const [paused, setPaused] = useState(false);
   const [over, setOver] = useState(false);
-  const [name, setName] = useState("INVITADO");
+  const [name, setName] = useState("");
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const username = data.user?.user_metadata?.username as string | undefined;
+      if (username) setName(username.toUpperCase().slice(0, 10));
+    });
+  }, [supabase]);
 
   useEffect(() => {
     if (isRocas || over || paused) return;
